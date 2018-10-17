@@ -102,13 +102,26 @@ def expressions(numbers, operators):
             yield (root.to_string(), value)
 
 
-def concat(d1, d2):
-    return d1 * 10 + d2
+def concat_expressions(digits, operators):
+    count = len(digits)
+    for i in range(2 ** (count - 1)):
+        numbers = [digits[0]]
+        for k in range(count - 1):
+            if i // (2 ** k) % 2 == 1:
+                numbers[-1] = numbers[-1] * 10 + digits[k + 1]
+            else:
+                numbers += [digits[k + 1]]
+
+        for item in expressions(numbers, operators):
+            yield item
 
 
 def main():
-    for item in expressions([1, 2, 3, 4, 5, 6, 7, 8, 9], [plus_op, minus_op, times_op, div_op, pow_op]):
-        print("{} = {}".format(item[0], item[1]))
+    for item in concat_expressions([1, 2, 3, 4, 5, 6, 7, 8, 9],
+                                   [plus_op, minus_op, times_op, div_op, pow_op]):
+        if item[1] == 2018:
+            print("{} = {}".format(item[0], item[1]))
+            break
 
 
 if __name__ == '__main__':
