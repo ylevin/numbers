@@ -99,7 +99,7 @@ def expressions(numbers, operators):
         root = tokens[0].get_root()
 
         for value in root.generate_results(operators):
-            yield (root.to_string(), value)
+            yield (value, lambda: root.to_string())
 
 
 def concat_expressions(digits, operators):
@@ -116,13 +116,24 @@ def concat_expressions(digits, operators):
             yield item
 
 
-def main():
-    for item in concat_expressions([1, 2, 3, 4, 5, 6, 7, 8, 9],
-                                   [plus_op, minus_op, times_op, div_op, pow_op]):
-        if item[1] == 2018:
-            print("{} = {}".format(item[0], item[1]))
-            break
+def make_table(n=100):
+    all_numbers = dict()
+    for value, get_exp_string in concat_expressions([1, 2, 3, 4, 5, 6, 7, 8, 9],
+                                                    [plus_op, minus_op, times_op, div_op, pow_op]):
+        if 0 <= value < n and value not in all_numbers:
+            all_numbers[value] = get_exp_string()
+            if len(all_numbers) == n:
+                for k, v in all_numbers.items():
+                    print("{} = {}".format(v, k))
+                break
+
+
+def find(n):
+    for value, get_exp_string in concat_expressions([1, 2, 3, 4, 5, 6, 7, 8, 9],
+                                                    [plus_op, minus_op, times_op, div_op, pow_op]):
+        if value == n:
+            return "{} = {}".format(get_exp_string(), value)
 
 
 if __name__ == '__main__':
-    main()
+    find(10958)
