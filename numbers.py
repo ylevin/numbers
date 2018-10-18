@@ -15,7 +15,10 @@ def check_pow(x, y, max_length=MAX_LENGTH):
         return False
     if x == 0:
         return True
-    return math.log10(abs(x)) * y < max_length
+    try:
+        return math.log10(abs(x)) * y < max_length
+    except ArithmeticError:
+        return False
 
 
 plus_op = Operator("+", lambda x, y: x + y)
@@ -92,14 +95,17 @@ class Expression(Token):
 def expressions(numbers, operators):
     count = len(numbers)
     op_length = count - 1
-    for order in orders(op_length):
-        tokens = [Constant(num) for num in numbers]
-        for i in order:
-            Expression(tokens[i], tokens[i + 1])
-        root = tokens[0].get_root()
+    if op_length == 0:
+        yield (numbers[0], lambda: str(numbers[0]))
+    else:
+        for order in orders(op_length):
+            tokens = [Constant(num) for num in numbers]
+            for i in order:
+                Expression(tokens[i], tokens[i + 1])
+            root = tokens[0].get_root()
 
-        for value in root.generate_results(operators):
-            yield (value, lambda: root.to_string())
+            for value in root.generate_results(operators):
+                yield (value, lambda: root.to_string())
 
 
 def concat_expressions(digits, operators):
@@ -136,4 +142,4 @@ def find(n):
 
 
 if __name__ == '__main__':
-    find(10958)
+    print(find(10958))
