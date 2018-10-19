@@ -4,10 +4,14 @@ MAX_LENGTH = 300
 
 
 class Operator:
-    def __init__(self, name, apply, possible=lambda x, y: True):
-        self.name = name
+    def __init__(self, display, priority, apply, possible=lambda x, y: True):
+        self.display = display
         self.apply = apply
+        self.priority = priority
         self.possible = possible
+
+    def __str__(self):
+        return self.display
 
 
 def check_pow(x, y, max_length=MAX_LENGTH):
@@ -21,11 +25,28 @@ def check_pow(x, y, max_length=MAX_LENGTH):
         return False
 
 
-plus_op = Operator("+", lambda x, y: x + y)
-minus_op = Operator("-", lambda x, y: x - y)
-times_op = Operator("*", lambda x, y: x * y)
-div_op = Operator("/", lambda x, y: x // y, lambda x, y: y != 0 and x % y == 0)
-pow_op = Operator("**", lambda x, y: x ** y, check_pow)
+plus_op = Operator("+", 1, lambda x, y: x + y)
+minus_op = Operator("-", 1, lambda x, y: x - y)
+times_op = Operator("*", 2, lambda x, y: x * y)
+div_op = Operator("/", 2, lambda x, y: x // y, lambda x, y: y != 0 and x % y == 0)
+pow_op = Operator("**", 3, lambda x, y: x ** y, check_pow)
+
+
+def keep_parentheses(op, parent_op, is_left):
+    if op is None:
+        return False
+    if parent_op == plus_op:
+        return False
+    if parent_op == minus_op and (is_left or op.priority > minus_op.priority):
+        return False
+    if parent_op == times_op and (op == times_op or op.priority >= times_op.priority):
+        return False
+    if parent_op == div_op and (op.priority > div_op.priority or (is_left and op.priority == div_op.priority)):
+        return False
+    if parent_op == pow_op and op == pow_op and not is_left:
+        return False
+
+    return True
 
 
 def orders(n):
@@ -41,6 +62,7 @@ def orders(n):
 class Token:
     def __init__(self):
         self.parent = None
+        self.operator = None
 
     def get_root(self):
         result = self
@@ -49,9 +71,6 @@ class Token:
             result = result.parent
 
         return result
-
-    def to_string(self):
-        raise NotImplemented
 
     def generate_results(self, operators):
         raise NotImplemented
@@ -62,7 +81,7 @@ class Constant(Token):
         super().__init__()
         self.value = value
 
-    def to_string(self):
+    def __str__(self):
         return str(self.value)
 
     def generate_results(self, operators):
@@ -74,7 +93,6 @@ class Expression(Token):
         super().__init__()
         self.left = left.get_root()
         self.right = right.get_root()
-        self.operator = None
         self.left.parent = self
         self.right.parent = self
 
@@ -86,10 +104,14 @@ class Expression(Token):
                     if op.possible(left_value, right_value):
                         yield op.apply(left_value, right_value)
 
-    def to_string(self):
-        return "({} {} {})".format(self.left.to_string(),
-                                   self.operator.name,
-                                   self.right.to_string())
+    def __str__(self):
+        left = self.left
+        right = self.right
+        if keep_parentheses(self.left.operator, self.operator, True):
+            left = "({})".format(left)
+        if keep_parentheses(self.right.operator, self.operator, False):
+            right = "({})".format(right)
+        return "{} {} {}".format(left, self.operator, right)
 
 
 def expressions(numbers, operators):
@@ -105,7 +127,7 @@ def expressions(numbers, operators):
             root = tokens[0].get_root()
 
             for value in root.generate_results(operators):
-                yield (value, lambda: root.to_string())
+                yield (value, lambda: str(root))
 
 
 def concat_expressions(digits, operators):
@@ -142,4 +164,4 @@ def find(n):
 
 
 if __name__ == '__main__':
-    print(find(10958))
+    make_table(1000)
